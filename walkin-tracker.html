@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Walk-In Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;min-height:100vh;background:#f0ede8}
+#app{min-height:100vh;background:#f0ede8;font-family:'DM Sans',sans-serif;padding:0 0 48px}
+.topbar{background:#fff;border-bottom:1px solid #e8e4de;padding:16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.topbar-title{font-size:15px;font-weight:700;color:#1a1814;letter-spacing:-.3px}
+.topbar-date{font-size:11px;color:#9b9690;font-family:'DM Mono',monospace;font-weight:400}
+.body{padding:16px;max-width:480px;margin:0 auto}
+.outlet-section{background:#fff;border-radius:16px;border:1px solid #e8e4de;padding:16px;margin-bottom:12px}
+.sec-label{font-size:10px;font-weight:700;color:#9b9690;letter-spacing:1.5px;margin-bottom:10px}
+.outlet-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.outlet-chip{border:1.5px solid #e8e4de;background:#fafaf8;border-radius:10px;padding:10px 8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:#4a4744;transition:all .15s;text-align:center;line-height:1.4}
+.outlet-chip:hover{border-color:#c8c4be;background:#f5f2ee}
+.outlet-chip.active{border-color:#1a1814;background:#1a1814;color:#fff}
+.outlet-chip .oc-emoji{font-size:18px;display:block;margin-bottom:3px}
+.selected-banner{background:#1a1814;border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.selected-banner .sb-left{display:flex;align-items:center;gap:10px}
+.selected-banner .sb-emoji{font-size:22px}
+.selected-banner .sb-name{font-size:14px;font-weight:700;color:#fff}
+.selected-banner .sb-sub{font-size:10px;color:rgba(255,255,255,.5);margin-top:1px}
+.selected-banner .sb-badge{background:rgba(255,255,255,.12);border-radius:6px;padding:4px 10px;font-size:10px;color:rgba(255,255,255,.7);font-weight:600;font-family:'DM Mono',monospace}
+.track-section{background:#fff;border-radius:16px;border:1px solid #e8e4de;padding:16px;margin-bottom:12px}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cat-btn{border:1.5px solid #e8e4de;border-radius:12px;padding:14px 10px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:#fafaf8;position:relative;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.cat-btn:disabled{opacity:.35;cursor:not-allowed}
+.cat-btn:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.08)}
+.cat-btn:not(:disabled):active{transform:scale(.97)}
+.cat-btn .cb-icon{font-size:20px;margin-bottom:4px}
+.cat-btn .cb-count{font-size:28px;font-weight:700;color:#1a1814;line-height:1;font-family:'DM Mono',monospace}
+.cat-btn .cb-name{font-size:11px;font-weight:600;color:#9b9690;letter-spacing:.3px}
+.cat-btn .cb-plus{position:absolute;top:10px;right:12px;font-size:18px;color:#d4d0ca;font-weight:300;line-height:1}
+.cat-phone{border-top:3px solid #3b82f6}
+.cat-repair{border-top:3px solid #10b981}
+.cat-cc{border-top:3px solid #f59e0b}
+.cat-others{border-top:3px solid #8b5cf6}
+.cat-btn:not(:disabled):hover.cat-phone{border-color:#3b82f6;background:#eff6ff}
+.cat-btn:not(:disabled):hover.cat-repair{border-color:#10b981;background:#f0fdf4}
+.cat-btn:not(:disabled):hover.cat-cc{border-color:#f59e0b;background:#fffbeb}
+.cat-btn:not(:disabled):hover.cat-others{border-color:#8b5cf6;background:#f5f3ff}
+.summary-section{background:#fff;border-radius:16px;border:1px solid #e8e4de;padding:16px;margin-bottom:12px}
+.sum-rows{display:flex;flex-direction:column;gap:0}
+.sum-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0ede8}
+.sum-row:last-child{border-bottom:none}
+.sum-row .sr-left{display:flex;align-items:center;gap:10px}
+.sum-row .sr-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-phone{background:#3b82f6}.dot-repair{background:#10b981}.dot-cc{background:#f59e0b}.dot-others{background:#8b5cf6}
+.sum-row .sr-label{font-size:13px;font-weight:500;color:#4a4744}
+.sum-row .sr-count{font-size:15px;font-weight:700;color:#1a1814;font-family:'DM Mono',monospace}
+.total-row{background:#f0ede8;border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.total-row .tr-label{font-size:12px;font-weight:700;color:#6b6864;letter-spacing:.5px}
+.total-row .tr-num{font-size:26px;font-weight:700;color:#1a1814;font-family:'DM Mono',monospace}
+.action-section{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.action-section-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.act-btn{border-radius:10px;padding:11px 8px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:3px;border:1.5px solid #e8e4de;background:#fff;color:#4a4744;-webkit-tap-highlight-color:transparent}
+.act-btn:disabled{opacity:.3;cursor:not-allowed;pointer-events:none}
+.act-btn:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.act-btn:not(:disabled):active{transform:scale(.97)}
+.act-btn .ai{font-size:16px}
+.btn-copy-s{background:#1a1814;border-color:#1a1814;color:#fff}
+.btn-tg-s{background:#0ea5e9;border-color:#0ea5e9;color:#fff}
+.btn-reset-s{background:#fff;border-color:#fca5a5;color:#ef4444}
+.modal-overlay{position:fixed;inset:0;background:rgba(20,18,14,.55);display:flex;align-items:flex-end;justify-content:center;z-index:999;padding:0;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.modal{background:#fff;border-radius:22px 22px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;animation:sheetUp .3s cubic-bezier(.34,1.4,.64,1)}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:#e8e4de;border-radius:2px;margin:0 auto 20px}
+.modal h2{font-size:17px;font-weight:700;color:#1a1814;margin-bottom:4px}
+.modal .modal-sub{font-size:13px;color:#9b9690;margin-bottom:20px}
+.modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.m-btn{border:none;border-radius:12px;padding:14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.m-btn:hover{transform:scale(1.02)}
+.m-cancel{background:#f0ede8;color:#4a4744}
+.m-confirm{background:#ef4444;color:#fff}
+.m-ok{background:#1a1814;color:#fff}
+.m-tg{background:#0ea5e9;color:#fff}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:11px;font-weight:700;color:#9b9690;letter-spacing:1px;margin-bottom:6px}
+.form-group select,.form-group input{width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #e8e4de;font-family:'DM Sans',sans-serif;font-size:13px;color:#1a1814;outline:none;background:#fff;appearance:none;-webkit-appearance:none;transition:border-color .15s}
+.form-group select:focus,.form-group input:focus{border-color:#1a1814}
+.laporan-box{background:#f0ede8;border-radius:12px;padding:14px;font-size:12px;color:#1a1814;line-height:1.9;white-space:pre-wrap;word-break:break-word;font-family:'DM Mono',monospace;max-height:200px;overflow-y:auto;border:1px solid #e8e4de}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(120px);background:#1a1814;color:#fff;padding:11px 22px;border-radius:50px;font-size:12px;font-weight:600;z-index:9999;transition:transform .3s cubic-bezier(.34,1.4,.64,1);white-space:nowrap;font-family:'DM Sans',sans-serif;pointer-events:none;letter-spacing:.2px;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.hint{text-align:center;font-size:11px;color:#b8b4ae;padding:10px 0 2px;font-style:italic}
+.pop{animation:pop .2s cubic-bezier(.34,1.6,.64,1)}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.45)}100%{transform:scale(1)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-title">Walk-In Tracker</div>
+    <div class="topbar-date" id="topbar-date"></div>
+  </div>
+  <div class="body">
+
+    <div class="outlet-section">
+      <div class="sec-label">PILIH OUTLET</div>
+      <div class="outlet-grid">
+        <button class="outlet-chip" onclick="selectOutlet(this,'🌾 Kulim','Kulim')">
+          <span class="oc-emoji">🌾</span>Kulim
+        </button>
+        <button class="outlet-chip" onclick="selectOutlet(this,'🌙 Alor Setar','Alor Setar')">
+          <span class="oc-emoji">🌙</span>Alor Setar
+        </button>
+        <button class="outlet-chip" onclick="selectOutlet(this,'🌊 Sungai Petani','Sungai Petani')">
+          <span class="oc-emoji">🌊</span>Sungai Petani
+        </button>
+        <button class="outlet-chip" onclick="selectOutlet(this,'🌿 Pendang','Pendang')">
+          <span class="oc-emoji">🌿</span>Pendang
+        </button>
+      </div>
+    </div>
+
+    <div id="selected-banner" style="display:none" class="selected-banner">
+      <div class="sb-left">
+        <span class="sb-emoji" id="sb-emoji"></span>
+        <div>
+          <div class="sb-name" id="sb-name"></div>
+          <div class="sb-sub">Sesi aktif</div>
+        </div>
+      </div>
+      <div class="sb-badge" id="sb-total-badge">0 masuk</div>
+    </div>
+
+    <div class="track-section">
+      <div class="sec-label">TAMBAH WALK-IN</div>
+      <div class="cat-grid">
+        <button class="cat-btn cat-phone" id="b-phone" onclick="addCount('phone')" disabled>
+          <span class="cb-icon">📱</span>
+          <span class="cb-count" id="c-phone">0</span>
+          <span class="cb-name">PHONE</span>
+          <span class="cb-plus">+</span>
+        </button>
+        <button class="cat-btn cat-repair" id="b-repair" onclick="addCount('repair')" disabled>
+          <span class="cb-icon">🔧</span>
+          <span class="cb-count" id="c-repair">0</span>
+          <span class="cb-name">REPAIR</span>
+          <span class="cb-plus">+</span>
+        </button>
+        <button class="cat-btn cat-cc" id="b-cc" onclick="addCount('cc')" disabled>
+          <span class="cb-icon">🛒</span>
+          <span class="cb-count" id="c-cc">0</span>
+          <span class="cb-name">CC</span>
+          <span class="cb-plus">+</span>
+        </button>
+        <button class="cat-btn cat-others" id="b-others" onclick="addCount('others')" disabled>
+          <span class="cb-icon">📋</span>
+          <span class="cb-count" id="c-others">0</span>
+          <span class="cb-name">OTHERS</span>
+          <span class="cb-plus">+</span>
+        </button>
+      </div>
+      <p class="hint" id="hint-text">Pilih outlet dahulu untuk mula track</p>
+    </div>
+
+    <div class="summary-section">
+      <div class="sec-label">RINGKASAN</div>
+      <div class="sum-rows">
+        <div class="sum-row">
+          <div class="sr-left"><span class="sr-dot dot-phone"></span><span class="sr-label">📱 Phone</span></div>
+          <span class="sr-count" id="s-phone">0</span>
+        </div>
+        <div class="sum-row">
+          <div class="sr-left"><span class="sr-dot dot-repair"></span><span class="sr-label">🔧 Repair</span></div>
+          <span class="sr-count" id="s-repair">0</span>
+        </div>
+        <div class="sum-row">
+          <div class="sr-left"><span class="sr-dot dot-cc"></span><span class="sr-label">🛒 CC</span></div>
+          <span class="sr-count" id="s-cc">0</span>
+        </div>
+        <div class="sum-row">
+          <div class="sr-left"><span class="sr-dot dot-others"></span><span class="sr-label">📋 Others</span></div>
+          <span class="sr-count" id="s-others">0</span>
+        </div>
+      </div>
+      <div class="total-row">
+        <span class="tr-label">JUMLAH PELANGGAN</span>
+        <span class="tr-num" id="s-total">0</span>
+      </div>
+    </div>
+
+    <div class="action-section">
+      <button class="act-btn btn-copy-s" id="btn-copy" onclick="copyLaporan()" disabled>
+        <span class="ai">📋</span>Copy Laporan
+      </button>
+      <button class="act-btn btn-tg-s" id="btn-tg" onclick="openTelegram()" disabled>
+        <span class="ai">✈️</span>Telegram
+      </button>
+    </div>
+    <div class="action-section-3">
+      <button class="act-btn" id="btn-back" onclick="openBackdate()" disabled>
+        <span class="ai">📅</span>Backdate
+      </button>
+      <button class="act-btn" id="btn-minus" onclick="openMinus()" disabled>
+        <span class="ai">➖</span>Tolak
+      </button>
+      <button class="act-btn btn-reset-s" id="btn-reset" onclick="openReset()" disabled>
+        <span class="ai">🔄</span>Reset
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Modal Reset -->
+<div id="modal-reset" class="modal-overlay" style="display:none" onclick="overlayClose(event,'modal-reset')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Reset Data</h2>
+    <p class="modal-sub">Yakin nak reset semua kiraan? Tindakan ini tidak boleh dibuat asal.</p>
+    <div class="modal-btns">
+      <button class="m-btn m-cancel" onclick="closeModal('modal-reset')">Batal</button>
+      <button class="m-btn m-confirm" onclick="confirmReset()">Ya, Reset</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Backdate -->
+<div id="modal-backdate" class="modal-overlay" style="display:none" onclick="overlayClose(event,'modal-backdate')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Backdate Entry</h2>
+    <p class="modal-sub">Tambah rekod untuk tarikh lain</p>
+    <div class="form-group">
+      <label>KATEGORI</label>
+      <select id="bd-cat">
+        <option value="phone">📱 Phone</option>
+        <option value="repair">🔧 Repair</option>
+        <option value="cc">🛒 CC (Cash Converter)</option>
+        <option value="others">📋 Others</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>TARIKH</label>
+      <input type="date" id="bd-date">
+    </div>
+    <div class="form-group">
+      <label>JUMLAH</label>
+      <input type="number" id="bd-amt" min="1" value="1">
+    </div>
+    <div class="modal-btns">
+      <button class="m-btn m-cancel" onclick="closeModal('modal-backdate')">Batal</button>
+      <button class="m-btn m-ok" onclick="confirmBackdate()">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tolak -->
+<div id="modal-minus" class="modal-overlay" style="display:none" onclick="overlayClose(event,'modal-minus')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Tolak Kiraan</h2>
+    <p class="modal-sub">Kurangkan kiraan untuk kategori tertentu</p>
+    <div class="form-group">
+      <label>KATEGORI</label>
+      <select id="mn-cat">
+        <option value="phone">📱 Phone</option>
+        <option value="repair">🔧 Repair</option>
+        <option value="cc">🛒 CC (Cash Converter)</option>
+        <option value="others">📋 Others</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>JUMLAH TOLAK</label>
+      <input type="number" id="mn-amt" min="1" value="1">
+    </div>
+    <div class="modal-btns">
+      <button class="m-btn m-cancel" onclick="closeModal('modal-minus')">Batal</button>
+      <button class="m-btn m-confirm" onclick="confirmMinus()">Tolak</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Copy -->
+<div id="modal-copy" class="modal-overlay" style="display:none" onclick="overlayClose(event,'modal-copy')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Laporan Disalin ✓</h2>
+    <p class="modal-sub">Tampal terus dalam Telegram</p>
+    <div class="laporan-box" id="laporan-preview"></div>
+    <div class="modal-btns">
+      <button class="m-btn m-cancel" onclick="closeModal('modal-copy')">Tutup</button>
+      <button class="m-btn m-tg" onclick="openTelegramDirect()">✈️ Buka Telegram</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var TELEGRAM_URL='https://t.me/c/1993509443/7906';
+var MONTHS=['Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
+var DAYS=['Ahad','Isnin','Selasa','Rabu','Khamis','Jumaat','Sabtu'];
+var state={outlet:'',counts:{phone:0,repair:0,cc:0,others:0},reportDate:new Date()};
+
+function initDate(){
+  var d=new Date();
+  document.getElementById('topbar-date').textContent=DAYS[d.getDay()]+', '+d.getDate()+' '+MONTHS[d.getMonth()];
+  var yyyy=d.getFullYear(),mm=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');
+  var bdEl=document.getElementById('bd-date');
+  if(bdEl)bdEl.value=yyyy+'-'+mm+'-'+dd;
+}
+
+function selectOutlet(el,full,name){
+  state.outlet=full;
+  document.querySelectorAll('.outlet-chip').forEach(function(c){c.classList.remove('active');});
+  el.classList.add('active');
+  var emoji=full.split(' ')[0];
+  document.getElementById('sb-emoji').textContent=emoji;
+  document.getElementById('sb-name').textContent=name;
+  document.getElementById('selected-banner').style.display='flex';
+  var ids=['b-phone','b-repair','b-cc','b-others','btn-copy','btn-tg','btn-back','btn-reset','btn-minus'];
+  ids.forEach(function(id){document.getElementById(id).disabled=false;});
+  document.getElementById('hint-text').textContent='Tekan kategori untuk +1 pelanggan';
+  updateBadge();
+  showToast(emoji+' '+name+' dipilih');
+}
+
+function addCount(cat){
+  state.counts[cat]++;
+  updateUI();
+  var msgs={phone:'📱 +1 Phone',repair:'🔧 +1 Repair',cc:'🛒 +1 CC',others:'📋 +1 Others'};
+  showToast(msgs[cat]);
+  popAnim('c-'+cat);
+}
+
+function updateBadge(){
+  var t=state.counts.phone+state.counts.repair+state.counts.cc+state.counts.others;
+  document.getElementById('sb-total-badge').textContent=t+' masuk';
+}
+
+function updateUI(){
+  ['phone','repair','cc','others'].forEach(function(c){
+    document.getElementById('c-'+c).textContent=state.counts[c];
+    document.getElementById('s-'+c).textContent=state.counts[c];
+  });
+  var t=state.counts.phone+state.counts.repair+state.counts.cc+state.counts.others;
+  document.getElementById('s-total').textContent=t;
+  updateBadge();
+}
+
+function popAnim(id){
+  var el=document.getElementById(id);
+  el.classList.remove('pop');
+  void el.offsetWidth;
+  el.classList.add('pop');
+}
+
+function getLaporan(){
+  var d=state.reportDate;
+  var dateStr=d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear();
+  var t=state.counts.phone+state.counts.repair+state.counts.cc+state.counts.others;
+  return '📊 LAPORAN WALK-IN\n: '+state.outlet+'\n📅 '+dateStr+'\n\n📱 Phone: '+state.counts.phone+'\n🔧 Repair: '+state.counts.repair+'\n🛒 CC: '+state.counts.cc+'\n📋 Others: '+state.counts.others+'\n\n🎯 JUMLAH: '+t;
+}
+
+function copyLaporan(){
+  var lap=getLaporan();
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(lap).then(function(){showCopyModal(lap);}).catch(function(){fallbackCopy(lap);});
+  }else{fallbackCopy(lap);}
+}
+
+function fallbackCopy(text){
+  var ta=document.createElement('textarea');
+  ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');}catch(e){}
+  document.body.removeChild(ta);
+  showCopyModal(text);
+}
+
+function showCopyModal(lap){
+  document.getElementById('laporan-preview').textContent=lap;
+  document.getElementById('modal-copy').style.display='flex';
+}
+
+function openTelegram(){
+  var lap=getLaporan();
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(lap).then(function(){
+      window.open(TELEGRAM_URL,'_blank');
+      showToast('Laporan disalin — tampal dalam Telegram ✈️');
+    }).catch(function(){window.open(TELEGRAM_URL,'_blank');});
+  }else{window.open(TELEGRAM_URL,'_blank');}
+}
+
+function openTelegramDirect(){
+  window.open(TELEGRAM_URL,'_blank');
+  closeModal('modal-copy');
+  showToast('Buka Telegram — tampal laporan anda ✈️');
+}
+
+function openReset(){document.getElementById('modal-reset').style.display='flex';}
+function confirmReset(){
+  state.counts={phone:0,repair:0,cc:0,others:0};
+  state.reportDate=new Date();
+  updateUI();
+  closeModal('modal-reset');
+  showToast('Data direset ✓');
+}
+
+function openBackdate(){
+  initDate();
+  document.getElementById('modal-backdate').style.display='flex';
+}
+function confirmBackdate(){
+  var cat=document.getElementById('bd-cat').value;
+  var amt=parseInt(document.getElementById('bd-amt').value)||0;
+  var dv=document.getElementById('bd-date').value;
+  if(amt<1){showToast('Masukkan jumlah yang sah');return;}
+  if(!dv){showToast('Pilih tarikh');return;}
+  state.counts[cat]+=amt;
+  var p=dv.split('-');
+  state.reportDate=new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+  document.getElementById('topbar-date').textContent=DAYS[state.reportDate.getDay()]+', '+state.reportDate.getDate()+' '+MONTHS[state.reportDate.getMonth()];
+  updateUI();
+  closeModal('modal-backdate');
+  var cn={phone:'Phone',repair:'Repair',cc:'CC',others:'Others'};
+  showToast('Backdate +'+amt+' '+cn[cat]+' disimpan 📅');
+}
+
+function openMinus(){document.getElementById('modal-minus').style.display='flex';}
+function confirmMinus(){
+  var cat=document.getElementById('mn-cat').value;
+  var amt=parseInt(document.getElementById('mn-amt').value)||0;
+  if(amt<1){showToast('Masukkan jumlah yang sah');return;}
+  if(state.counts[cat]<amt){showToast('Tidak boleh tolak lebih dari kiraan semasa');return;}
+  state.counts[cat]-=amt;
+  updateUI();
+  closeModal('modal-minus');
+  var cn={phone:'Phone',repair:'Repair',cc:'CC',others:'Others'};
+  showToast('➖ -'+amt+' '+cn[cat]+' ditolak');
+}
+
+function closeModal(id){document.getElementById(id).style.display='none';}
+function overlayClose(e,id){if(e.target===document.getElementById(id))closeModal(id);}
+
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2500);
+}
+
+initDate();
+</script>
+</body>
+</html>
